@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Topic</title>
+    <link rel="shortcut icon" href="./assets/tuzhii.ico">
+    <link rel="stylesheet" type="text/css" href="./css/toptopic.css">
+    <script src="http://apps.bdimg.com/libs/angular.js/1.3.9/angular.min.js"></script>
+</head>
+
+<!-- 显示时间 -->
+<script type="text/javascript">
+function setTimeSpan() {
+    var date = new Date();
+    timeSpan.innerText = date.format('yyyy-MM-dd hh:mm:ss');
+}
+
+Date.prototype.format = function(format) {
+    var o = {
+        "M+": this.getMonth() + 1, //month
+        "d+": this.getDate(), //day
+        "h+": this.getHours(), //hour
+        "m+": this.getMinutes(), //minute
+        "s+": this.getSeconds(), //second
+        "q+": Math.floor((this.getMonth() + 3) / 3), //quarter
+        "S": this.getMilliseconds() //millisecond
+    }
+    if (/(y+)/.test(format))
+        format = format.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(format))
+            format = format.replace(RegExp.$1, RegExp.$1.length == 1 ? o[k] : ("00" + o[k]).substr(("" + o[k]).length));
+    return format;
+}
+</script>
+
+<body onLoad="setInterval(setTimeSpan,1000);">
+    <div class="container">
+
+        <div class="header">
+                <tr>
+                    <td bgcolor="#b4b4b4">
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="padding:2px">
+                            <tbody>
+                                <tr>
+                                    <td style="width:18px;padding-right:4px">
+                                        <a href="http://fuzhii.com/"><img src="./assets/tuzhii.jpg" width="32" height="32" style="border:0px #b4b4b4 solid;"></a>
+                                    </td>
+                                    <td style="line-height:24pt; height:14px;"><b>Top Topics</b>  | <a href="http://blog.fuzhii.com/">Blog</a> | <a href="https://github.com/"><font color="#ff6600">Github</font></a>
+                                    </td>
+                                     <td style="text-align:right;padding-right:6px;"> <span class="label label-info" id="timeSpan"></span></td>
+
+
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+        </div>
+
+        <div class="topic">
+            <div ng-app="myApp" ng-controller="customersCtrl">
+                <ul>
+                    <li ng-repeat="ele in topics">
+                      <a href= {{ele.url}}> {{  ele.title }} </a> <span style="font-size:20px;">&nbsp;</span> {{ ele.followers }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+		var app = angular.module('myApp', []);
+		app.controller('customersCtrl', function($scope, $http) {
+  		$http.get("http://localhost:5000/toptopic/api/topics")
+  		.success(function (response) {$scope.topics = response.topics;});
+		});
+		</script>   
+
+		<!-- 脚标 -->
+		<div class="footer">
+    	<tr>
+        <td>
+            <table width="100%" cellspacing="0" cellpadding="1">
+                <tbody>
+                    <tr>
+                        <td bgcolor="#b4b4b4"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+            <center>Powered by: <a href="http://fuzhii.com/">titus</a> | <a href="https://www.zhihu.com/">Zhihu</a> 
+                <br> <p>copyright ©2015</p>
+            </center>
+        </td>
+   		</tr>
+		</div>
+
+
+    </div>
+
+</body>
+
+</html>

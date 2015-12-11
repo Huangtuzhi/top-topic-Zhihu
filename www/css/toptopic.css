@@ -1,0 +1,45 @@
+body {
+    font-family: 'Helvetica Neue', Verdana;
+    font-size: 15pt;
+    color: #828282;
+    width: 780px;
+    margin: 6px auto;
+}
+
+td {
+    font-family: 'Helvetica Neue', Verdana;
+    font-size: 11pt;
+    color: #828282;
+    padding-left: 3px;
+}
+
+
+.header {
+	font-size: 18px;
+	margin: 0px auto;
+}
+
+.container {
+	background-color: rgb(246, 246, 239);
+}
+
+.header {
+    background-color: #b4b4b4;
+    height: 35px;
+}
+
+.topic {
+	margin-bottom: 178px;
+}
+
+li {
+	margin: 18px auto;
+}
+
+.footer {
+	font-size: 16px;
+}
+
+
+a:link    { color:#000000; text-decoration:none; }
+a:visited { color:#828282; text-decoration:none; }
