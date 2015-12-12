@@ -81,4 +81,4 @@ cd /usr/local/nginx/sbin
 
 ## Demo
 
-![image](./assets/demo.jpg)
+![image](./assets/demo.png)
