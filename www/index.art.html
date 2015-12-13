@@ -9,7 +9,6 @@
     <link rel="stylesheet" type="text/css" href="./css/toptopic.css">
     <link rel="stylesheet" type="text/css" href="./css/button.css">
     <script src="http://apps.bdimg.com/libs/angular.js/1.3.9/angular.min.js"></script>
-    <script src="./js/template.js"></script>
 </head>
 
 <!-- 显示时间 -->
@@ -38,10 +37,9 @@ Date.prototype.format = function(format) {
 }
 </script>
 
-<body onLoad="setInterval(setTimeSpan,1000);getTopTopicsByDay(1)">
+<body onLoad="setInterval(setTimeSpan,1000);">
     <div class="container">
 
-        <!-- header 部分 -->
         <div class="header">
                 <tr>
                     <td bgcolor="#b4b4b4">
@@ -54,6 +52,8 @@ Date.prototype.format = function(format) {
                                     <td style="line-height:24pt; height:14px;"><b>Top Topics</b>  | <a href="http://fuzhii.com/">Blog</a> | <a href="https://github.com/"><font color="#ff6600">Github</font></a>
                                     </td>
                                      <td style="text-align:right;padding-right:6px;"> <span class="label label-info" id="timeSpan"></span></td>
+
+
                                 </tr>
                             </tbody>
                         </table>
@@ -61,78 +61,37 @@ Date.prototype.format = function(format) {
                 </tr>
         </div>
 
-        <!-- 问题主体部分 -->
-        <div id="topic_content" class="topic"></div>
-        <script id="topic_template" type="text/html">
-        {{if isAdmin}}
-            <ul>
-                {{each list as value}}
-                    <li> 
-                        <a href= {{value.url}}> {{  value.title }} </a> <span style="font-size:20px;">&nbsp;</span> {{ value.followers }}
+        <div class="topic">
+            <div ng-app="myApp" ng-controller="customersCtrl">
+                <ul>
+                    <li ng-repeat="ele in topics">
+                      <a href= {{ele.url}}> {{  ele.title }} </a> <span style="font-size:20px;">&nbsp;</span> {{ ele.followers }}
+                    </li>
+                </ul>
+            </div>
+        </div>
 
-                   </li>
-                {{/each}}
-            </ul>
-        {{/if}}
-        </script>
-
-        <!-- Ajax 获取数据与渲染页面函数封装 -->
         <script>
-        function getTopTopicsByDay(day)
+        var app = angular.module('myApp', []);
+        app.controller('customersCtrl', function($scope, $http) {
+            $http.get("http://your_ip:5000/toptopic/api/topics")
+            .success(function (response) {$scope.topics = response.topics;});
+        });
+        </script>  
+
+        <script>
+        function getTopTopicsByDay()
         {
-            function success(text) {
-                var js_obj_of_list_in_json = JSON.parse(text);
-
-                var data = {
-                    title: 'topic',
-                    isAdmin: true,
-                    list: js_obj_of_list_in_json.topics 
-                };
-
-                // list 应该是一个数组给 template 渲染，不是一个字符串。
-
-                var html = template('topic_template', data);
-                document.getElementById('topic_content').innerHTML = html;
-            }
-
-            function fail(code) {
-                return;
-            }
-
-            var request = new XMLHttpRequest();
-
-            request.onreadystatechange = function () {
-            if (request.readyState === 4) { // 成功完成
-            // 判断响应结果:
-            if (request.status === 200) {
-            // 成功，通过responseText拿到响应的文本:
-            return success(request.responseText);
-            } else {
-            // 失败，根据响应码判断失败原因:
-            return fail(request.status);
-            }
-            } else {
-            // HTTP请求还在继续...
-            }
-            }
-            // 发送请求:
-            var resource_url = "http://your_ip:5000/toptopic/api/topics/" + day;
-            request.open('GET', resource_url);
-            request.send();
+            $route.reload()
         }
 		</script>   
 
-        <!-- 选择查看的时间段 -->
         <div class="timechoser">
-        <span id="btn-today" class="button button-primary button-pill button-small" onclick="getTopTopicsByDay(1)">今天</span>  
-        <span id="btn-yestody" class="button button-primary button-pill button-small" 
-        onclick="getTopTopicsByDay(2)">昨天</span>
-        <span id="btn-last3days" class="button button-primary button-pill button-small"
-        onclick="getTopTopicsByDay(3)">三天内</span>  
-        <span id="btn-last5days" class="button button-primary button-pill button-small"
-        onclick="getTopTopicsByDay(5)">五天内</span>
-        <span id="btn-last7days" class="button button-primary button-pill button-small"
-        onclick="getTopTopicsByDay(7)">七天内</span>
+        <span id="btn-today" class="button button-primary button-pill button-small" onclick="getTopTopicsByDay()">今天</span>  
+        <span id="btn-yestody" class="button button-primary button-pill button-small">昨天</span>
+        <span id="btn-last3days" class="button button-primary button-pill button-small">三天内</span>  
+        <span id="btn-last5days" class="button button-primary button-pill button-small">五天内</span>
+        <span id="btn-last7days" class="button button-primary button-pill button-small">七天内</span>
         </div>
 
 		<!-- 脚标 -->
@@ -154,7 +113,9 @@ Date.prototype.format = function(format) {
    		</tr>
 		</div>
 
+
     </div>
+
 </body>
 
 </html>

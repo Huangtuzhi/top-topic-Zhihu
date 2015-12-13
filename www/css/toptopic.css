@@ -1,9 +1,16 @@
+html {
+    height: 100%;
+    overflow: hidden;    
+}
+
 body {
     font-family: 'Helvetica Neue', Verdana;
     font-size: 15pt;
     color: #828282;
     width: 780px;
     margin: 6px auto;
+    height: 100%;
+    overflow: hidden;
 }
 
 td {
@@ -21,6 +28,9 @@ td {
 
 .container {
 	background-color: rgb(246, 246, 239);
+    height: 100%;
+    margin-bottom: 6px;
+    overflow: hidden;
 }
 
 .header {
@@ -29,11 +39,22 @@ td {
 }
 
 .topic {
-	margin-bottom: 178px;
+    /*make footer fixed at the bottom of page*/
+    min-height: 450px;
 }
 
 li {
-	margin: 18px auto;
+	margin: 16px auto;
+}
+
+.timechoser {
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.button-primary {
+    background-color: #b4b4b4 !important;
+    border-color: #b4b4b4 !important;
 }
 
 .footer {

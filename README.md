@@ -1,5 +1,7 @@
 ## top-topic-Zhihu
-抓取「知乎」网站每天新提出的热门 top10 问题，聚合显示。包含前后端整个项目。
+抓取「知乎」网站每天**新**提出的热门 top10 问题聚合显示，提供另一种看知乎的姿势。包含前后端整个项目。
+
+世界很大，不被纷繁的 timeline 所迷惑。
 
 ## 步骤
 需要这几步来完成目标：
@@ -10,37 +12,47 @@
 
 **抓取**：抓取部分主要是爬虫，先手动输入验证码获取登录 Cookie。然后带着该 Cookie 模拟发出 Get 请求来获得网页数据。思路是从自己的个人主页开始爬，先爬出现在主页 timeline 上的所有人，再爬这些人主页上的其他人...，直到数据量足够大。把人的 ID 存储在 people 中。接着继续爬 people 中所有人主页上提出的问题，并获得问题的关注人数和提问时间。把抓取到的问题存储在 question 中。
 
-**存储**：存储可以把上面的 people，question 写入文本或者 MySQL 数据库。中间数据也应该放到数据库中，不然内存会被无穷多的递归生成的中间数据填满。
+**存储**：存储可以把上面的 people，question 写入文本或者 MySQL 数据库,。中间数据也应该放到数据库中，不然内存会被无穷多的递归生成的中间数据填满。本项目使用带主键的 MySQL 表模拟内存 set 来存储 people。
 
-**分析**：网站目的是获取每天新提出的 top10 热门问题，所以需要对时间过滤，对关注人数排序。这都可以在 SQL 查询中完成。
+**分析**：网站目的是获取每天或者一个时间段内新提出的 top10 热门问题，所以需要对时间过滤，对关注人数排序。这都可以在 SQL 查询中完成。
 
-**展示**：展示包括后台和前端两部分，后台需要在 DB 中取得数据构造成 JSON 格式以 CGI 的形式提供给前端调用。这里使用 Python Flask 框架提供 CGI 后台服务。前端页面主要是跨域 AJax 请求后台 CGI 来获得数据，结合定义的模板来展示页面。这里使用 AngularJS 来简单的编写模板及 AJax 请求的逻辑部分。
+**展示**：展示包括后台和前端两部分，后台需要在 DB 中取得数据构造成 JSON 格式以 CGI 的形式提供给前端调用。这里使用 Python Flask 框架提供 CGI 后台服务。前端页面主要是跨域 AJax 请求后台 CGI 来获得数据，结合定义的模板来展示页面。在版本 V1 中使用 AngularJS 来简单的编写模板及 AJax 请求的逻辑部分，在版本 V2 中使用 artTemplate 和封装原生的 Js 来满足需求。
 
-## 目录
+## 目录结构
 
 ```
 └── top-topic-Zhihu
     ├── assets
     │   └── demo.png
-    ├── captcha.gif    # 拉取到本地的验证码，手动输入
+    ├── captcha.gif    # 拉取到本地的验证码
+    ├── dataSpider.py  # 爬虫
     ├── dataAccess.py  # AO 服务
-    ├── dataAccess.pyc
     ├── dataCGI.py     # Python Flask 提供给前端的 CGI
-    ├── dataSpider.py  # 爬虫，抓取数据
     ├── people_db.txt  # 抓到的人
     ├── people_visited_db.txt
     ├── question_db.txt# 抓到的问题
     ├── README.md
     ├── tool           # 工具
-    │   └── cron.sh    # 定时任务
+    │   └── cron.sh    # 定时任务 每天 23:00 执行 dataSpider.py
     └── www            # 网站文件
-        ├── assets
+        ├── assets    
         │   ├── tuzhii.ico
         │   └── tuzhii.jpg
         ├── css
-        │   └── toptopic.css
-        └── index.html
+        │   ├── button.css   # 按钮样式
+        │   └── toptopic.css # 网页样式
+        ├── index.html
+        └── js
+            └── template.js  # artTemplate 库
 ```
+
+## 依赖
+
++ BeautifulSoup
++ requests
++ MySQLdb
++ flask
++ flask.ext.cors
 
 ## 配置 Nginx
 

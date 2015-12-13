@@ -35,9 +35,9 @@ def get_login_cookies():
     login_url = url + '/login/email'
     login_data = {
         '_xsrf': '',
-        'password': 'password',
+        'password': 'your_password',
         'remember_me': 'true',
-        'email': 'email@qq.com'
+        'email': 'your_email'
     }
 
     headers_base = {
@@ -82,15 +82,7 @@ def crawl_url(req, cookies, target_url):
     return ret.text
 
 
-# def extract_topic(text):
-#     pattern = re.compile('(?<=<a class="question_link" target="_blank" href="/question/).*">[^<>]*(?=</a>)')
-#     topic = pattern.findall(text)
-#     if topic is None:
-#         return ''
-#     else:
-#         return topic
-
-
+# V1 版本，用 set 存储中间数据
 zhihu_people = set([])
 zhihu_people_visited = set([])
 
@@ -123,6 +115,30 @@ def construct_people_db(req, local_cookies, text):
         construct_people_db(req, local_cookies, another_text)
 
 
+# V2 版本，用数据库模拟 set 存储中间数据
+dbObject = DataInfo()
+def construct_people_db_v2(req, local_cookies, text):
+    global dbObject
+    soup = BeautifulSoup(text)
+    for one in soup(class_='author-link'):
+        name = one.get('href').split('/')[-1]
+
+        if not dbObject.is_people_visited(name):
+            dbObject.add_to_people_db(name)
+
+    all_people = dbObject.get_all_in_people_db()
+    for people in all_people:
+        dbObject.add_to_people_visited_db(people)
+        dbObject.remove_from_people_db(people)
+
+        another_homepage = 'https://www.zhihu.com/people/' + people
+        another_text = crawl_url(req, local_cookies, another_homepage)
+        construct_people_db_v2(req, local_cookies, another_text)
+
+    dbObject.close_mysql()
+
+
+# V1 版本，由 people 生成 question
 zhihu_question = set([])
 
 def construct_question_db(req, local_cookies):
@@ -156,6 +172,7 @@ def construct_question_db(req, local_cookies):
     question_db.close()
 
 
+# V1 版本, 由 question 信息去网络上爬提问时间，关注者信息，补充 question 数据
 def get_topic_info(req, local_cookies):
     db = DataInfo()
     question_db = open('question_db.txt', 'r')
@@ -174,7 +191,7 @@ def get_topic_info(req, local_cookies):
         if soup.find('div', class_='zh-question-followers-sidebar').find('strong') else 0
 
         db.add_data_to_mysql(first_ask_time, follower_count, question_id)
-        print question_url, first_ask_time, follower_count
+        # print question_url, first_ask_time, follower_count
 
         question = question_db.readline()
         question_id = question.split(' ')[0]
@@ -183,16 +200,57 @@ def get_topic_info(req, local_cookies):
     db.close_mysql()
 
 
+# V2 版本，由 people 生成 question。直接操作数据库，不进行写文件操作。
+def convert_from_people_to_question(req, local_cookies):
+    dbObject = DataInfo()
+    all_people = dbObject.get_all_in_people_merged_db()
+
+    for people in all_people:
+        homepage_url = "https://www.zhihu.com/people/" + people
+        homepage = crawl_url(req, local_cookies, homepage_url)
+        soup = BeautifulSoup(homepage)
+        for one in soup(class_='question_link'):
+            question_id = one.get('href').split('/')[2]
+
+            # 判断 DB 是否已经有了这个 question_id，有了则重新获取别的
+            if dbObject.is_question_visited(question_id):
+                continue
+
+            question_title = one.string.encode('utf-8')
+
+            question_url = "https://www.zhihu.com/question/" + question_id + "/log"
+            question_page = crawl_url(req, local_cookies, question_url)
+            page_soup = BeautifulSoup(question_page)
+            first_ask_time = page_soup.find_all("time")[-1].string if page_soup.find_all("time") else '2000-00-00'
+            # 由于“服务器提出了一个问题”，可能会读不到数据
+            if (page_soup.find('div', class_='zh-question-followers-sidebar') == None):
+                continue;
+            follower_count = page_soup.find('div', class_='zh-question-followers-sidebar').find('strong').get_text() \
+                if page_soup.find('div', class_='zh-question-followers-sidebar').find('strong') else 0
+
+            dbObject.add_data_to_question_db(question_id, question_title, first_ask_time, follower_count)
+            print question_id, question_title, first_ask_time, follower_count
+
+    dbObject.close_mysql()
+
 if __name__ == '__main__':
 
     # 获取登录 sesion 和 cookies，用来爬数据
     req, local_cookies = get_login_cookies()
+    # text = crawl_url(req, local_cookies, 'https://www.zhihu.com/people/titushuang')
 
-    # 运行一次，用来抓取用户 ID，生成 people_db.txt
+    # V1 版本。运行一次，用来抓取用户 ID，生成 people_db.txt
     # construct_people_db(req, local_cookies, text)
 
-    # 抓取问题，生成 question_db.txt
+    # V1 版本。抓取问题，生成 question_db.txt
     # construct_question_db(req, local_cookies)
 
-    # 用 dataAccess 文件的类对 DB 操作，更新问题的提问时间和关注人数
-    get_topic_info(req, local_cookies)
+    # V1 版本。用 dataAccess 文件的类对 DB 操作，更新问题的提问时间和关注人数
+    # get_topic_info(req, local_cookies)
+
+    # V2 版本构造 people 的数据库
+    # construct_people_db_v2(req, local_cookies, text)
+
+    # V2 版本，由 people 生成 question
+    convert_from_people_to_question(req, local_cookies)
+

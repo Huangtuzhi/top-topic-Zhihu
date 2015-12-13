@@ -3,6 +3,8 @@
 
 import MySQLdb
 import MySQLdb.cursors
+from datetime import *
+import time
 
 
 class DataInfo(object):
@@ -13,6 +15,50 @@ class DataInfo(object):
 
     def close_mysql(self):
         self.db.close()
+
+    # 建立 people 和 people_visited 表，模拟内存 set，存储中间数据。
+    def create_people_table(self):
+        try:
+            self.cursor.execute("DROP TABLE IF EXISTS people")
+            self.cursor.execute("DROP TABLE IF EXISTS people_visited")
+            create_people_sql = '''CREATE TABLE people(
+            people_id varchar(100) NOT NULL,
+            primary KEY (people_id)
+            )'''
+            create_people_visited_sql = '''CREATE TABLE people_visited(
+            people_id varchar(100) NOT NULL,
+            primary KEY (people_id)
+            )'''
+            self.cursor.execute(create_people_sql)
+            self.cursor.execute(create_people_visited_sql)
+            self.db.commit()
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+            self.db.rollback
+
+    # 建表people_merged
+    def create_people_merged_table(self):
+        try:
+            self.cursor.execute("DROP TABLE IF EXISTS people_merged")
+            create_people_merged_sql = '''CREATE TABLE people_merged(
+            people_id varchar(100) NOT NULL,
+            primary KEY (people_id)
+            )'''
+            self.cursor.execute(create_people_merged_sql)
+            self.db.commit()
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+            self.db.rollback
+
+    # 将表 people 和 people_visited 合并为表 people_merged
+    def merge_people_of_db(self):
+        try:
+            self.cursor.execute('''insert into people_merged select * from people
+                                union select * from people_visited''')
+            self.db.commit()
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+            self.db.rollback
 
     def create_question_table(self):
         try:
@@ -31,6 +77,70 @@ class DataInfo(object):
             self.db.rollback()
         self.db.close()
 
+    def is_people_visited(self, people_id):
+        try:
+            self.cursor.execute('''select COUNT(*) as cnt from people_visited
+                where people_id=%s''', (people_id,))
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+
+        people_count = self.cursor.fetchall()[0]['cnt']
+        return 1 if (people_count == 1) else 0
+
+    def add_to_people_db(self, people_id):
+        try:
+            self.cursor.execute("""insert into people(people_id)
+                values (%s)""", (people_id,))
+            self.db.commit()
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+
+    def remove_from_people_db(self, people_id):
+        try:
+            self.cursor.execute("""delete from people where
+                people_id=%s""", (people_id,))
+            self.db.commit()
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+
+    def add_to_people_visited_db(self, people_id):
+        try:
+            self.cursor.execute("""insert into people_visited(people_id)
+                values (%s)""", (people_id,))
+            self.db.commit()
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+
+    def get_all_in_people_db(self):
+        self.cursor.execute('''select people_id from people''')
+        peoples = self.cursor.fetchall()
+        ret_data = []
+        if not peoples:
+            return ret_data
+        for one in peoples:
+            ret_data.append(one['people_id'])
+        return ret_data
+
+    def get_all_in_people_merged_db(self):
+        self.cursor.execute('''select people_id from people_merged''')
+        peoples = self.cursor.fetchall()
+        ret_data = []
+        if not peoples:
+            return ret_data
+        for one in peoples:
+            ret_data.append(one['people_id'])
+        return ret_data
+
+    def is_question_visited(self, question_id):
+        try:
+            self.cursor.execute('''select COUNT(*) as cnt from question
+                where question_id=%s''', (question_id,))
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+        question_count = self.cursor.fetchall()[0]['cnt']
+        return 1 if (question_count == 1) else 0
+
+    # 版本 V1 方法
     def transfer_txt_to_mysql(self):
         question_db = open('question_db.txt', 'r')
         question = question_db.readline()
@@ -50,6 +160,7 @@ class DataInfo(object):
             question_title = question.split(' ')[1].strip()
         self.db.close()
 
+    # 版本 V1 方法
     def add_data_to_mysql(self, *para):
         try:
             self.cursor.execute('''UPDATE question
@@ -61,11 +172,21 @@ class DataInfo(object):
             print "Mysql Error %d: %s" % (e.args[0], e.args[1])
             self.db.rollback()
 
-    def get_top_topic_these_days(self):
+    def add_data_to_question_db(self, *para):
+        try:
+            self.cursor.execute("""insert into question(question_id, title, ask_time, followers)
+                values (%s, %s, %s, %s)""", (para[0], para[1], para[2], para[3]))
+            self.db.commit()
+
+        except MySQLdb.Error, e:
+            print "Mysql Error %d: %s" % (e.args[0], e.args[1])
+            self.db.rollback()
+
+    def get_top_topic_these_days(self, look_days):
         self.cursor.execute('''select * from question where
-            ask_time > '2015-12-08 00:00:00' and ask_time < '2015-12-11'
+            ask_time > DATE_SUB(%s, INTERVAL %s DAY)
             order by followers desc limit 10;
-            ''')
+            ''', ('2015-12-13', look_days))
         top_data = self.cursor.fetchall()
         ret_data = []
         if not top_data:
@@ -75,9 +196,7 @@ class DataInfo(object):
             ret_data.append({'question_id': data['question_id'], 'ask_time': data['ask_time'],
                              'followers': data['followers'], 'title': data['title'], 'url': question_url
                              })
-            # print data['question_id'], data['title'], data['ask_time'], data['followers']
         return ret_data
-
 
 if __name__=='__main__':
     info = DataInfo()
@@ -85,12 +204,12 @@ if __name__=='__main__':
     # 新建重置 DB
     # info.create_question_table()
 
-    # 将 txt 中数据导入到 MySQL 中
+    # V1 版本。将 txt 中数据导入到 MySQL 中
     # info.transfer_txt_to_mysql()
-    # info.select()
 
-    # 在 MySQL question 表中更新字段
-    #info.add_data_to_mysql('2015-12-10', 1000, '26592438');
+    # 建立 people, people_merged 表
+    # info.create_people_table()
+    # info.create_people_merged_table()
 
-    # 显示最近几天 top topic
-    print info.get_top_topic_these_days()
+    # info.merge_people_of_db()
+    info.close_mysql()
