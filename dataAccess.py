@@ -9,7 +9,7 @@ import time
 
 class DataInfo(object):
     def __init__(self):
-        self.db = MySQLdb.connect("localhost", "root", "199194", "top_topic_zhihu",
+        self.db = MySQLdb.connect("localhost", "root", "XXXXX", "top_topic_zhihu",
                                   cursorclass=MySQLdb.cursors.DictCursor, charset='utf8')
         self.cursor = self.db.cursor()
 
@@ -75,7 +75,6 @@ class DataInfo(object):
         except MySQLdb.Error, e:
             print "Mysql Error %d: %s" % (e.args[0], e.args[1])
             self.db.rollback()
-        self.db.close()
 
     def is_people_visited(self, people_id):
         try:
@@ -201,15 +200,11 @@ class DataInfo(object):
 if __name__=='__main__':
     info = DataInfo()
 
-    # 新建重置 DB
-    # info.create_question_table()
+    # 建表
+    info.create_question_table()
+    info.create_people_table()
+    info.create_people_merged_table()
 
-    # V1 版本。将 txt 中数据导入到 MySQL 中
-    # info.transfer_txt_to_mysql()
-
-    # 建立 people, people_merged 表
-    # info.create_people_table()
-    # info.create_people_merged_table()
-
+    # 等 people 的数据抓取完成，construct_people_db_v2 函数调用之后再调用此方法
     # info.merge_people_of_db()
     info.close_mysql()

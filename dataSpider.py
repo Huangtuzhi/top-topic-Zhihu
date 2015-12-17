@@ -6,6 +6,7 @@ import re
 from bs4 import BeautifulSoup
 import string
 from dataAccess import DataInfo
+import time
 
 
 def get_xsrf_token(text):
@@ -31,24 +32,25 @@ def get_captcha(req):
 
 
 def get_login_cookies():
-    url = 'http://www.zhihu.com'
+    url = 'https://www.zhihu.com'
     login_url = url + '/login/email'
     login_data = {
         '_xsrf': '',
-        'password': 'your_password',
+        'password': 'zhhuangyi199194',
         'remember_me': 'true',
-        'email': 'your_email'
+        'email': '476424727@qq.com'
     }
 
     headers_base = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Encoding': 'gzip, deflate, sdch',
-        'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2',
+        'Accept-Language': 'en-US,en;q=0.8',
         'Connection': 'keep-alive',
         'Host': 'www.zhihu.com',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
-        'Referer': 'http://www.zhihu.com/',
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/40.0.2214.111 Chrome/40.0.2214.111 Safari/537.36',
+        # 'Referer': 'http://www.zhihu.com/',
     }
+
 
     req = requests.session()
     ret = req.get(url, headers=headers_base)
@@ -71,14 +73,15 @@ def crawl_url(req, cookies, target_url):
     headers_base = {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Encoding': 'gzip, deflate, sdch',
-        'Accept-Language': 'en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4,zh-TW;q=0.2',
+        'Accept-Language': 'en-US,en;q=0.8',
         'Connection': 'keep-alive',
         'Host': 'www.zhihu.com',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.130 Safari/537.36',
-        'Referer': 'http://www.zhihu.com/',
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/40.0.2214.111 Chrome/40.0.2214.111 Safari/537.36',
+        # 'Referer': 'http://www.zhihu.com/',
     }
 
     ret = req.get(target_url, headers=headers_base, cookies=cookies)
+    print 'rawl status: %s', ret.status_code
     return ret.text
 
 
@@ -219,6 +222,7 @@ def convert_from_people_to_question(req, local_cookies):
             question_title = one.string.encode('utf-8')
 
             question_url = "https://www.zhihu.com/question/" + question_id + "/log"
+            # time.sleep(2) # 睡眠 300ms，知乎有反爬虫策略
             question_page = crawl_url(req, local_cookies, question_url)
             page_soup = BeautifulSoup(question_page)
             first_ask_time = page_soup.find_all("time")[-1].string if page_soup.find_all("time") else '2000-00-00'
@@ -237,20 +241,11 @@ if __name__ == '__main__':
 
     # 获取登录 sesion 和 cookies，用来爬数据
     req, local_cookies = get_login_cookies()
-    # text = crawl_url(req, local_cookies, 'https://www.zhihu.com/people/titushuang')
-
-    # V1 版本。运行一次，用来抓取用户 ID，生成 people_db.txt
-    # construct_people_db(req, local_cookies, text)
-
-    # V1 版本。抓取问题，生成 question_db.txt
-    # construct_question_db(req, local_cookies)
-
-    # V1 版本。用 dataAccess 文件的类对 DB 操作，更新问题的提问时间和关注人数
-    # get_topic_info(req, local_cookies)
+    # 第一次获取自己主页的网页
+    text = crawl_url(req, local_cookies, 'https://www.zhihu.com/people/your_name')
 
     # V2 版本构造 people 的数据库
-    # construct_people_db_v2(req, local_cookies, text)
+    construct_people_db_v2(req, local_cookies, text)
 
-    # V2 版本，由 people 生成 question
-    convert_from_people_to_question(req, local_cookies)
-
+    # V2 版本，由 people 生成 question。等 people_merged 表生成，merge_people_of_db()方法执行完成后再执行这一步。
+    # convert_from_people_to_question(req, local_cookies)
