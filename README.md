@@ -55,15 +55,15 @@
 + flask.ext.cors
 
 ## 使用方法
-+ 本地 MySQL 中建数据库 `top_topic_zhihu`。dataAccess 文件中 __init__ 方法 MySQL 的密码更改为自己的密码
++ 本地 MySQL 中建数据库 `top_topic_zhihu`。dataAccess.py 中 init 构造方法 MySQL 的密码更改为自己的密码
 
-+ dataSpider.py 中 get_login_cookies 函数中 email 和 password 修改为自己的账户密码，__main__ 中
++ dataSpider.py 中 get_login_cookies() 函数中 email 和 password 修改为自己的账户密码，main 中
 
 `text = crawl_url(req, local_cookies, 'https://www.zhihu.com/people/your_id')`
  
 your_id 修改为自己的用户 ID
 
-+ index.html 中请求的服务器地址 your_ip 修改为自己机器的 IP。dataCGI.py 中 __main__ 中的 your_ip 也修改为此 IP。
++ index.html 中请求的服务器地址 your_ip 修改为自己机器的 IP。dataCGI.py main  下面的 your_ip 也修改为此 IP。
 
 ```
 var resource_url = "http://your_ip:5000/toptopic/api/topics/"
@@ -77,7 +77,7 @@ var resource_url = "http://your_ip:5000/toptopic/api/topics/"
     info.create_people_merged_table()
 ```
 
-+ 执行 dataSpider.py 下列方法抓取 people 数据，需要手动输入本目录下图片中的验证码。
++ 执行 dataSpider.py 下列方法抓取 people 数据，需要手动输入本目录下图片中的验证码
 
 ```
     req, local_cookies = get_login_cookies()
