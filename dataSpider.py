@@ -36,9 +36,9 @@ def get_login_cookies():
     login_url = url + '/login/email'
     login_data = {
         '_xsrf': '',
-        'password': 'zhhhangyi199194',
+        'password': 'your_name',
         'remember_me': 'true',
-        'email': '477424737@qq.com'
+        'email': 'your_email'
     }
 
     headers_base = {
